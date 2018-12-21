@@ -11,7 +11,7 @@ class Role:
     def __init__(self,  roledesc, iid, configpath):
         self.iid = iid
         self.roleDesc = roledesc
-        self.config = toolbox.readConfig(configpath)
+        self.config = toolbox.parse_cfg(configpath)
 
         mcastGrp = self.config[self.roleDesc][0]
         mcastPort = self.config[self.roleDesc][1]
