@@ -1,0 +1,4 @@
+clients 224.1.1.1 5007
+proposers 224.1.1.1 5008
+acceptors 224.1.1.1 5009
+learners 224.1.1.1 5010
