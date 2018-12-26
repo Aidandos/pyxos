@@ -18,7 +18,7 @@ class Client(Role):
         while True:
             try:
                 value = input()
-                msg = Message(value)
+                msg = Message(value, msg_type=1)
                 self.send(msg, "proposers")
 
             except KeyboardInterrupt:

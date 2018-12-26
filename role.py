@@ -11,7 +11,15 @@ class Role:
         print(configpath)
         self.iid = iid
         self.roleDesc = roledesc
+
+        self.c_rnd = 0
+        self.c_val = 0
+        self.rnd = 0
+        self.v_rnd = 0
+        self.v_val = 0
+
         self.config = toolbox.parse_cfg(configpath)
+
 
         mcastGrp = self.config[self.roleDesc][0]
         mcastPort = self.config[self.roleDesc][1]
@@ -25,7 +33,7 @@ class Role:
 
     def receive(self):
         while True:
-            #print(pickle.loads(self.sockRcv.recv(10240)).message)
+            # print(pickle.loads(self.sockRcv.recv(10240)).message)
             msg = pickle.loads(self.sockRcv.recv(10240))
             return msg
 

@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class MessageType(Enum):
     PHASE1A = 1
     PHASE2A = 2

@@ -1,6 +1,7 @@
 import argparse
 
 from role import Role
+from message import Message
 
 parser = argparse.ArgumentParser(description='Client')
 parser.add_argument('--id', default=1, type=int)
@@ -17,9 +18,10 @@ class Learner(Role):
     def read(self):
         while True:
             msg = self.receive()
-            self.state = int(msg.message) + 1
-            #self.send(msg, "pro")
-            print(self.state)
+
+            if msg.type == 6:
+                print('Type 6')
+                msg_new = Message(msg.message, msg_type=2)
 
 
 if __name__ == '__main__':

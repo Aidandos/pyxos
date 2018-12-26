@@ -1,4 +1,5 @@
 import argparse
+from message import Message
 
 from role import Role
 
@@ -12,13 +13,23 @@ class Proposer(Role):
     def __init__(self, iid, configpath):
         super(Proposer, self).__init__("proposers", iid, configpath)
         self.state = 0
+
     def read(self):
         while True:
             msg = self.receive()
-            #msg.message += 1
-            self.state = int(msg.message) + 1
-            self.send(msg, "acceptors")
-            print(self.state)
+
+            if msg.type == 1:
+                print('Type 1')
+                msg_new = Message(msg.message, msg_type=2)
+                self.send(msg_new, "acceptors")
+            elif msg.type == 3:
+                print('Type 3')
+                msg_new = Message(msg.message, msg_type=4)
+                self.send(msg_new, "acceptors")
+            elif msg.type == 5:
+                print('Type 5')
+                msg_new = Message(msg.message, msg_type=6)
+                self.send(msg_new, "learners")
 
 
 if __name__ == '__main__':
