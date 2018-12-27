@@ -11,10 +11,11 @@
 
 
 class Message:
-    def __init__(self, message, msg_type, instance=0, c_rnd=0, c_val=0, rnd=0, v_val=0, v_rnd=0):
+    def __init__(self, message, msg_type, instance, iid, c_rnd=0, c_val=0, rnd=0, v_val=0, v_rnd=0):
         self.message = message
         self.type = msg_type
         self.instance = instance
+        self.iid = iid
         self.c_rnd = c_rnd
         self.c_val = c_val
         self.rnd = rnd

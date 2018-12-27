@@ -12,7 +12,7 @@ parser.add_argument('--config', default='', type=str, metavar='PATH',
 class Learner(Role):
     def __init__(self, iid, configpath):
         super(Learner, self).__init__('learners', iid, configpath)
-        self.state = 0
+        self.instances = {}
         # print(configpath)
 
     def read(self):
@@ -21,6 +21,7 @@ class Learner(Role):
 
             if msg.type == 6:
                 print('Type 6')
+                self.instances[msg.instance] = msg.v_val
                 print(msg.v_val)
 
 

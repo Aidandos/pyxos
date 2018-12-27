@@ -2,6 +2,7 @@ import sys
 import argparse
 from role import Role
 from message import Message
+import uuid
 
 parser = argparse.ArgumentParser(description='Client')
 parser.add_argument('--id', default=1, type=int)
@@ -18,7 +19,8 @@ class Client(Role):
         while True:
             try:
                 value = input()
-                msg = Message(value, msg_type=1)
+
+                msg = Message(value, msg_type=1, iid=uuid.uuid4(), instance=0)
                 self.send(msg, "proposers")
 
             except KeyboardInterrupt:
