@@ -13,7 +13,7 @@ class Learner(Role):
     def __init__(self, iid, configpath):
         super(Learner, self).__init__('learners', iid, configpath)
         self.state = 0
-        #print(configpath)
+        # print(configpath)
 
     def read(self):
         while True:
@@ -21,7 +21,7 @@ class Learner(Role):
 
             if msg.type == 6:
                 print('Type 6')
-                msg_new = Message(msg.message, msg_type=2)
+                print(msg.v_val)
 
 
 if __name__ == '__main__':
