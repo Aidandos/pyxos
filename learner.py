@@ -46,7 +46,7 @@ class Learner(Role):
     def print_next_message(self, instance):
         if instance[1]+1 in self.total_order[instance[0]]:
             if instance[1]+1 not in self.total_order_sent[instance[0]]:
-                print(self.total_order_memory[(instance[0], instance[1]+1)].v_val, flush=True)
+                print(self.total_order_memory[(instance[0], instance[1]+1)], flush=True)
                 self.total_order_sent[instance[0]].append(instance[1])
                 self.print_order.append(instance)
                 self.print_next_message((instance[0], instance[1]+1))
