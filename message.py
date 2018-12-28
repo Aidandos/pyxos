@@ -8,12 +8,14 @@
 5: Phase2B
 6: Decision
 7: Leader
+8: Catchup
+9: Catchup_Answer
 """
 
 
 class Message:
     def __init__(self, msg_type, message=0, instance=0, iid=0, c_rnd=0, c_val=0, rnd=0,
-                 v_val=0, v_rnd=0, current_leader=0, prop_id=0):
+                 v_val=0, v_rnd=0, current_leader=0, prop_id=0, msg_memory={}, total_order=[]):
         self.message = message
         self.type = msg_type
         self.instance = instance
@@ -25,4 +27,6 @@ class Message:
         self.v_rnd = v_rnd
         self.current_leader = current_leader
         self.prop_id = prop_id
+        self.msg_memory = msg_memory
+        self.total_order = total_order
 

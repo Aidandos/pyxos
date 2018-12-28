@@ -19,12 +19,13 @@ class Client(Role):
         self.instance = 0
 
     def send_input(self):
+        time.sleep(1)
         for value in sys.stdin:
             value = value.strip()
-            msg = Message(message=value, msg_type=1, iid=uuid.uuid4(), instance=self.instance)
+            msg = Message(message=value, msg_type=1, iid=self.iid, instance=(uuid.uuid4(), self.instance))
             self.send(msg, "proposers")
-            self.instance += 1
-            time.sleep(.1)
+            self.instance += 1.0
+            time.sleep(.01)
 
 
 if __name__ == '__main__':
