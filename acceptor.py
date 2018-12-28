@@ -25,20 +25,20 @@ class Acceptor(Role):
                 self.v_val[msg.instance] = 0
 
             if msg.type == 2:
-                print('Type 2')
+                # print('Type 2')
                 if msg.c_rnd >= self.rnd[msg.instance]:
                     self.rnd[msg.instance] = msg.c_rnd
-                    msg_new = Message(msg.message, msg_type=3, rnd=self.rnd[msg.instance],
+                    msg_new = Message(message=msg.message, msg_type=3, rnd=self.rnd[msg.instance],
                                       v_val=self.v_val[msg.instance],
                                       v_rnd=self.v_rnd[msg.instance],
                                       iid=msg.iid, instance=msg.instance)
                     self.send(msg_new, "proposers")
             elif msg.type == 4:
-                print('Type 4')
+                # print('Type 4')
                 if msg.c_rnd >= self.rnd[msg.instance]:
                     self.v_rnd[msg.instance] = msg.c_rnd
                     self.v_val[msg.instance] = msg.c_val
-                    msg_new = Message(msg.message, msg_type=5, v_rnd=self.v_rnd[msg.instance],
+                    msg_new = Message(message=msg.message, msg_type=5, v_rnd=self.v_rnd[msg.instance],
                                       v_val=self.v_val[msg.instance],
                                       iid=msg.iid, instance=msg.instance)
                     self.send(msg_new, "proposers")

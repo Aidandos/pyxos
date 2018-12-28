@@ -1,4 +1,5 @@
 import argparse
+from threading import Thread
 
 from role import Role
 from message import Message
@@ -13,16 +14,18 @@ class Learner(Role):
     def __init__(self, iid, configpath):
         super(Learner, self).__init__('learners', iid, configpath)
         self.instances = {}
-        # print(configpath)
+        self.caught_up = False
+
+        self.catch_up_thread = Thread(target=self.catch_up)
 
     def read(self):
         while True:
             msg = self.receive()
 
             if msg.type == 6:
-                print('Type 6')
+                # print('Type 6')
                 self.instances[msg.instance] = msg.v_val
-                print(msg.v_val)
+                print(msg.v_val, flush=True)
 
 
 if __name__ == '__main__':

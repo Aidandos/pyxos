@@ -1,8 +1,10 @@
 import sys
 import argparse
+import uuid
+import time
+
 from role import Role
 from message import Message
-import uuid
 
 parser = argparse.ArgumentParser(description='Client')
 parser.add_argument('--id', default=1, type=int)
@@ -14,21 +16,15 @@ parser.add_argument('--config', default='', type=str, metavar='PATH',
 class Client(Role):
     def __init__(self, iid, configpath):
         super(Client, self).__init__("clients", iid, configpath)
+        self.instance = 0
 
     def send_input(self):
-        while True:
-            try:
-                value = input()
-
-                msg = Message(value, msg_type=1, iid=uuid.uuid4(), instance=0)
-                self.send(msg, "proposers")
-
-            except KeyboardInterrupt:
-                print("Interruption by keyboard")
-                raise
-            except EOFError:
-                print("File is at its end")
-                raise
+        for value in sys.stdin:
+            value = value.strip()
+            msg = Message(message=value, msg_type=1, iid=uuid.uuid4(), instance=self.instance)
+            self.send(msg, "proposers")
+            self.instance += 1
+            time.sleep(.1)
 
 
 if __name__ == '__main__':

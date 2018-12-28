@@ -1,4 +1,7 @@
 import argparse
+from threading import Thread
+import time
+
 from message import Message
 
 from role import Role
@@ -28,9 +31,46 @@ class Proposer(Role):
         self.v_val = {}
         self.potential_v = {}
 
+        self.prop_iid = iid
+        self.current_leader = 0
+        self.cardiac_arrest_threshold = 0.5
+        self.potential_leaders = []
+
+        self.heart = Thread(target=self.beat_heart, daemon=True)
+        self.heart.start()
+
+        self.stethoscope = Thread(target=self.check_heartbeat_leader)
+        self.stethoscope.start()
+
+    # https://stackoverflow.com/questions/29769332/how-to-create-a-background-threaded-on-interval-function-call-in-python
+    def beat_heart(self):
+        while True:
+            msg_new = Message(msg_type=7, prop_id=self.prop_iid, current_leader=self.current_leader)
+            self.send(msg_new, "proposers")
+            time.sleep(0.1)
+
+    def check_heartbeat_leader(self):
+        while True:
+            time.sleep(0.2)
+            self.potential_leaders = []
+            time.sleep(self.cardiac_arrest_threshold)
+            lowest = sorted(self.potential_leaders)[0]
+            if lowest != self.current_leader:
+                self.current_leader = lowest
+
     def read(self):
         while True:
             msg = self.receive()
+
+            if msg.type == 7:
+                # print('Type 7')
+                self.potential_leaders.append(msg.prop_id)
+                # print('current leader',self.current_leader)
+                # print('me', self.prop_iid)
+
+            if not self.current_leader == self.prop_iid:
+                continue
+
             if msg.instance not in self.v.keys():
                 self.v[msg.instance] = {}
                 self.c_rnd[msg.instance] = {}
@@ -46,7 +86,7 @@ class Proposer(Role):
                 self.potential_v[msg.instance] = {}
 
             if msg.type == 1:
-                print('Type 1')
+                # print('Type 1')
 
                 self.v[msg.instance][msg.iid] = msg.message
 
@@ -57,12 +97,12 @@ class Proposer(Role):
                 self.Reached1B[msg.instance][msg.iid] = False
                 self.Reached2B[msg.instance][msg.iid] = False
 
-                msg_new = Message(msg.message, msg_type=2, c_rnd=self.c_rnd[msg.instance][msg.iid],
+                msg_new = Message(message=msg.message, msg_type=2, c_rnd=self.c_rnd[msg.instance][msg.iid],
                                   iid=msg.iid, instance=msg.instance)
 
                 self.send(msg_new, "acceptors")
             elif msg.type == 3:
-                print('Type 3')
+                # print('Type 3')
                 if self.c_rnd[msg.instance][msg.iid] == msg.rnd:
                     if msg.iid not in self.quorum1B[msg.instance].keys():
                         self.quorum1B[msg.instance][msg.iid] = [msg]
@@ -70,7 +110,7 @@ class Proposer(Role):
                         self.quorum1B[msg.instance][msg.iid].append(msg)
                     if len(self.quorum1B[msg.instance][msg.iid]) >= self.quorum_length \
                             and not self.Reached1B[msg.instance][msg.iid]:
-                        print('Quorum 1B reached')
+                        # print('Quorum 1B reached')
                         self.k[msg.instance][msg.iid] = 0
                         self.Reached1B[msg.instance][msg.iid] = True
                         for msg in self.quorum1B[msg.instance][msg.iid]:
@@ -82,12 +122,12 @@ class Proposer(Role):
                         else:
                             self.c_val[msg.instance][msg.iid] = self.potential_v[msg.instance][msg.iid]
 
-                        msg_new = Message(msg.message, msg_type=4, c_rnd=self.c_rnd[msg.instance][msg.iid],
+                        msg_new = Message(msg_type=4, message=msg.message, c_rnd=self.c_rnd[msg.instance][msg.iid],
                                           c_val=self.c_val[msg.instance][msg.iid],
                                           iid=msg.iid, instance=msg.instance)
                         self.send(msg_new, "acceptors")
             elif msg.type == 5:
-                print('Type 5')
+                # print('Type 5')
                 if self.c_rnd[msg.instance][msg.iid] == msg.v_rnd:
                     if msg.iid not in self.quorum2B[msg.instance].keys():
                         self.quorum2B[msg.instance][msg.iid] = [msg]
@@ -95,11 +135,11 @@ class Proposer(Role):
                         self.quorum2B[msg.instance][msg.iid].append(msg)
                     if len(self.quorum2B[msg.instance][msg.iid]) >= self.quorum_length \
                             and not self.Reached2B[msg.instance][msg.iid]:
-                        print('Quorum 2B reached')
+                        # print('Quorum 2B reached')
                         self.Reached2B[msg.instance][msg.iid] = True
                         if all(msg.v_rnd == self.c_rnd[msg.instance][msg.iid]
                                for msg in self.quorum2B[msg.instance][msg.iid]):
-                            msg_new = Message(msg.message, msg_type=6,
+                            msg_new = Message(message=msg.message, msg_type=6,
                                               v_val=self.quorum2B[msg.instance][msg.iid][0].v_val,
                                               iid=msg.iid, instance=msg.instance)
                             self.send(msg_new, "learners")

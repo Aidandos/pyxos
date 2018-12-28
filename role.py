@@ -8,7 +8,7 @@ from socket_utils import createSocket
 
 class Role:
     def __init__(self,  roledesc, iid, configpath):
-        print(configpath)
+        # print(configpath)
         self.iid = iid
         self.roleDesc = roledesc
 
