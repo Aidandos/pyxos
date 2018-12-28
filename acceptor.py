@@ -8,6 +8,9 @@ parser.add_argument('--id', default=1, type=int)
 parser.add_argument('--config', default='', type=str, metavar='PATH',
                     help='path to config')
 
+'''
+Probably the most straightforward script of the whole codebase
+'''
 
 class Acceptor(Role):
     def __init__(self, iid, configpath):

@@ -1,6 +1,7 @@
 import argparse
 from threading import Thread
 import time
+import uuid
 
 from message import Message
 
@@ -11,6 +12,14 @@ parser.add_argument('--id', default=1, type=int)
 parser.add_argument('--config', default='', type=str, metavar='PATH',
                     help='path to config')
 
+'''
+First I thought that each line in the input, for each client, would correspond to the same
+instance so we would need to differentiate between msg.iid and msg.interval but it turns out
+that in our case msg.interval is already unique and we do not need an iid. However,
+in the case of multiple values per instance, this code would also work.
+I tried to avoid for loops as they incur heavy computation, but the code is still pretty slow
+'''
+
 
 class Proposer(Role):
     def __init__(self, iid, configpath):
@@ -20,9 +29,11 @@ class Proposer(Role):
         self.c_val = {}
 
         self.quorum1B = {}
+        self.quorum1B_counter = {}
         self.Reached1B = {}
         self.quorum2B = {}
         self.Reached2B = {}
+        self.check_v_rnd = {}
 
         self.quorum_length = 2
 
@@ -33,14 +44,17 @@ class Proposer(Role):
 
         self.prop_iid = iid
         self.current_leader = 0
-        self.cardiac_arrest_threshold = 0.5
+        self.cardiac_arrest_threshold = 1
         self.potential_leaders = []
 
-        self.heart = Thread(target=self.beat_heart, daemon=True)
+        self.heart = Thread(target=self.beat_heart)
         self.heart.start()
 
         self.stethoscope = Thread(target=self.check_heartbeat_leader)
         self.stethoscope.start()
+
+        self.main_thread = Thread(target=self.read)
+        self.main_thread.start()
 
     # https://stackoverflow.com/questions/29769332/how-to-create-a-background-threaded-on-interval-function-call-in-python
     def beat_heart(self):
@@ -51,7 +65,7 @@ class Proposer(Role):
 
     def check_heartbeat_leader(self):
         while True:
-            time.sleep(0.2)
+            time.sleep(1)
             self.potential_leaders = []
             time.sleep(self.cardiac_arrest_threshold)
             lowest = sorted(self.potential_leaders)[0]
@@ -65,8 +79,8 @@ class Proposer(Role):
             if msg.type == 7:
                 # print('Type 7')
                 self.potential_leaders.append(msg.prop_id)
-                # print('current leader',self.current_leader)
-                # print('me', self.prop_iid)
+                #print('current leader',self.current_leader)
+                #print('me', self.prop_iid)
 
             if not self.current_leader == self.prop_iid:
                 continue
@@ -77,9 +91,11 @@ class Proposer(Role):
                 self.c_rnd[msg.instance]['most_current'] = 0
                 self.c_val[msg.instance] = {}
                 self.quorum1B[msg.instance] = {}
+                self.quorum1B_counter[msg.instance] = {}
                 self.quorum2B[msg.instance] = {}
                 self.Reached1B[msg.instance] = {}
                 self.Reached2B[msg.instance] = {}
+                self.check_v_rnd[msg.instance] = {}
                 self.k[msg.instance] = {}
                 self.V[msg.instance] = {}
                 self.v_val[msg.instance] = {}
@@ -101,22 +117,25 @@ class Proposer(Role):
                                   iid=msg.iid, instance=msg.instance)
 
                 self.send(msg_new, "acceptors")
+
             elif msg.type == 3:
                 # print('Type 3')
                 if self.c_rnd[msg.instance][msg.iid] == msg.rnd:
                     if msg.iid not in self.quorum1B[msg.instance].keys():
-                        self.quorum1B[msg.instance][msg.iid] = [msg]
+                        self.quorum1B[msg.instance][msg.iid] = {}
+                        self.quorum1B_counter[msg.instance][msg.iid] = 1
+                        self.quorum1B[msg.instance][msg.iid][msg.v_rnd] = msg.v_val
                     else:
-                        self.quorum1B[msg.instance][msg.iid].append(msg)
-                    if len(self.quorum1B[msg.instance][msg.iid]) >= self.quorum_length \
+                        self.quorum1B[msg.instance][msg.iid][msg.v_rnd] = msg.v_val
+                        self.quorum1B_counter[msg.instance][msg.iid] += 1
+                    if self.quorum1B_counter[msg.instance][msg.iid] >= self.quorum_length \
                             and not self.Reached1B[msg.instance][msg.iid]:
                         # print('Quorum 1B reached')
                         self.k[msg.instance][msg.iid] = 0
                         self.Reached1B[msg.instance][msg.iid] = True
-                        for msg in self.quorum1B[msg.instance][msg.iid]:
-                            if msg.v_rnd >= self.k[msg.instance][msg.iid]:
-                                self.k[msg.instance][msg.iid] = msg.v_rnd
-                                self.potential_v[msg.instance][msg.iid] = msg.v_val
+                        self.k[msg.instance][msg.iid] = max(self.quorum1B[msg.instance][msg.iid].keys())
+                        self.potential_v[msg.instance][msg.iid] =\
+                            self.quorum1B[msg.instance][msg.iid][self.k[msg.instance][msg.iid]]
                         if self.k[msg.instance][msg.iid] == 0:
                             self.c_val[msg.instance][msg.iid] = self.v[msg.instance][msg.iid]
                         else:
@@ -131,14 +150,16 @@ class Proposer(Role):
                 if self.c_rnd[msg.instance][msg.iid] == msg.v_rnd:
                     if msg.iid not in self.quorum2B[msg.instance].keys():
                         self.quorum2B[msg.instance][msg.iid] = [msg]
+                        self.check_v_rnd[msg.instance][msg.iid] = True
                     else:
                         self.quorum2B[msg.instance][msg.iid].append(msg)
+                        self.check_v_rnd[msg.instance][msg.iid] =\
+                        (self.quorum2B[msg.instance][msg.iid][0].v_rnd == msg.v_rnd)
                     if len(self.quorum2B[msg.instance][msg.iid]) >= self.quorum_length \
                             and not self.Reached2B[msg.instance][msg.iid]:
                         # print('Quorum 2B reached')
                         self.Reached2B[msg.instance][msg.iid] = True
-                        if all(msg.v_rnd == self.c_rnd[msg.instance][msg.iid]
-                               for msg in self.quorum2B[msg.instance][msg.iid]):
+                        if self.check_v_rnd[msg.instance][msg.iid]:
                             msg_new = Message(message=msg.message, msg_type=6,
                                               v_val=self.quorum2B[msg.instance][msg.iid][0].v_val,
                                               iid=msg.iid, instance=msg.instance)
